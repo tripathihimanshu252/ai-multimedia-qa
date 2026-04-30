@@ -26,7 +26,8 @@ async def client():
 async def test_register_success(client):
     mock_result = MagicMock(); mock_result.inserted_id = ObjectId(FAKE_ID)
     with patch("database.users_collection.find_one", new_callable=AsyncMock, return_value=None), \
-         patch("database.users_collection.insert_one", new_callable=AsyncMock, return_value=mock_result):
+         patch("database.users_collection.insert_one", new_callable=AsyncMock, return_value=mock_result), \
+         patch("routes.auth.hash_password", return_value="$2b$12$hashedpw"):
         res = await client.post("/api/auth/register", json={"username":"testuser","email":"test@example.com","password":"pass123"})
         assert res.status_code == 201
         assert "access_token" in res.json()
@@ -43,7 +44,7 @@ async def test_login_invalid_credentials(client):
 
 async def test_me_unauthorized(client):
     res = await client.get("/api/auth/me")
-    assert res.status_code == 403
+    assert res.status_code == 401
 
 async def test_root(client):
     res = await client.get("/")

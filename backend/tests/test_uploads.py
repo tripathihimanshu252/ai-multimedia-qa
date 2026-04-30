@@ -28,10 +28,10 @@ async def auth_client():
                 yield ac
 
 async def test_list_files_empty(auth_client):
-    async def empty_cursor(*a, **kw):
-        async def _iter(): return; yield
-        m = MagicMock(); m.__aiter__ = lambda s: _iter(); return m
-    with patch("database.files_collection.find", return_value=MagicMock(__aiter__=lambda s: iter([]))):
+    class EmptyAsyncIter:
+        def __aiter__(self): return self
+        async def __anext__(self): raise StopAsyncIteration
+    with patch("database.files_collection.find", return_value=EmptyAsyncIter()):
         res = await auth_client.get("/api/files")
         assert res.status_code == 200
 

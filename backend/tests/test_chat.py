@@ -42,6 +42,8 @@ async def test_chat_still_processing(auth_client):
         assert "processing" in res.json()["answer"].lower()
 
 async def test_chat_rate_limited(auth_client):
-    with patch("services.cache_service.check_rate_limit", new_callable=AsyncMock, return_value=False):
+    fake_file = {"_id": ObjectId(FAKE_ID), "transcription": "some text", "owner_id": auth_client.headers.get("owner_id", "x")}
+    with patch("routes.chat.check_rate_limit", new_callable=AsyncMock, return_value=False), \
+         patch("database.files_collection.find_one", new_callable=AsyncMock, return_value=fake_file):
         res = await auth_client.post("/api/chat", json={"file_id": FAKE_ID, "question": "test"})
         assert res.status_code == 429

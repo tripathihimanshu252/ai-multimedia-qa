@@ -13,7 +13,7 @@ pwd_ctx = CryptContext(schemes=["bcrypt"], deprecated="auto")
 bearer  = HTTPBearer()
 
 def hash_password(pw: str) -> str:
-    return pwd_ctx.hash(pw)
+    return pwd_ctx.hash(pw[:72])
 
 def verify_password(plain: str, hashed: str) -> bool:
     return pwd_ctx.verify(plain, hashed)
