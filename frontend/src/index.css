@@ -1,7 +1,1 @@
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: 'Segoe UI', sans-serif; background: #0f1117; color: #e0e0e0; min-height: 100vh; }
-::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: #1a1d27; }
-::-webkit-scrollbar-thumb { background: #4f8ef7; border-radius: 3px; }
-a { color: inherit; text-decoration: none; }
-button { cursor: pointer; }
+@import "tailwindcss";
