@@ -18,12 +18,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-allow_origins=[
-    "https://ai-multimedia-qa-frontend.vercel.app",
-    "https://ai-multimedia-qa-frontend-pdcmcpy8y.vercel.app",
-    "http://localhost:5173",
-    "http://localhost:3000",
-],
+
 app.include_router(auth.router)
 app.include_router(uploads.router)
 app.include_router(chat.router)
@@ -32,3 +27,7 @@ app.include_router(media.router)
 @app.get("/")
 async def root():
     return {"message": "AI Multimedia Q&A Backend Running"}
+
+@app.get("/health")
+async def health():
+    return {"status": "ok"}
