@@ -1,48 +1,45 @@
-import os, hashlib
-import redis.asyncio as aioredis
-from typing import Optional
-from dotenv import load_dotenv
+import os
 
-load_dotenv()
+# Redis is optional - gracefully disabled if not available
+try:
+    import redis
+    _REDIS_URL = os.getenv("REDIS_URL", "")
+    if _REDIS_URL:
+        _client = redis.from_url(_REDIS_URL, decode_responses=True, socket_connect_timeout=2)
+        _client.ping()
+        REDIS_AVAILABLE = True
+        print("✅ Redis connected")
+    else:
+        raise ValueError("No REDIS_URL set")
+except Exception as e:
+    REDIS_AVAILABLE = False
+    _client = None
+    print(f"⚠️ Redis not available: {e} - caching disabled")
 
-REDIS_URL   = os.getenv("REDIS_URL", "redis://localhost:6379")
-CACHE_TTL   = 3600
-RATE_WINDOW = 60
-RATE_LIMIT  = 30
-
-_redis = None
-
-async def get_redis():
-    global _redis
-    if _redis is None:
-        _redis = await aioredis.from_url(REDIS_URL, decode_responses=True)
-    return _redis
-
-def _cache_key(file_id: str, question: str) -> str:
-    h = hashlib.md5(f"{file_id}:{question}".encode()).hexdigest()
-    return f"qa:{h}"
-
-async def get_cached_answer(file_id: str, question: str) -> Optional[str]:
+def get_cached_answer(key: str):
+    if not REDIS_AVAILABLE:
+        return None
     try:
-        r = await get_redis()
-        return await r.get(_cache_key(file_id, question))
+        return _client.get(key)
     except Exception:
         return None
 
-async def set_cached_answer(file_id: str, question: str, answer: str) -> None:
+def set_cached_answer(key: str, value: str, ttl: int = 3600):
+    if not REDIS_AVAILABLE:
+        return
     try:
-        r = await get_redis()
-        await r.setex(_cache_key(file_id, question), CACHE_TTL, answer)
+        _client.setex(key, ttl, value)
     except Exception:
         pass
 
-async def check_rate_limit(user_id: str) -> bool:
+def check_rate_limit(user_id: str, limit: int = 20) -> bool:
+    if not REDIS_AVAILABLE:
+        return True  # allow all requests when Redis is down
     try:
-        r   = await get_redis()
         key = f"rate:{user_id}"
-        cnt = await r.incr(key)
-        if cnt == 1:
-            await r.expire(key, RATE_WINDOW)
-        return cnt <= RATE_LIMIT
+        count = _client.incr(key)
+        if count == 1:
+            _client.expire(key, 60)
+        return count <= limit
     except Exception:
         return True
