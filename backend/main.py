@@ -31,3 +31,13 @@ async def root():
 @app.get("/health")
 async def health():
     return {"status": "ok"}
+
+@app.get("/debug-env")
+async def debug_env():
+    import os
+    return {
+        "MONGO_URI_SET": bool(os.getenv("MONGO_URI")),
+        "DB_NAME": os.getenv("DB_NAME", "NOT SET"),
+        "JWT_SECRET_SET": bool(os.getenv("JWT_SECRET")),
+        "GOOGLE_API_KEY_SET": bool(os.getenv("GOOGLE_API_KEY")),
+    }
