@@ -1,25 +1,16 @@
-import asyncio
-import whisper
-from typing import Dict
+try:
+    import whisper
+    _model = None
+    WHISPER_AVAILABLE = True
+except ImportError:
+    WHISPER_AVAILABLE = False
+    print("⚠️ Whisper not available - audio transcription disabled")
 
-_model = None
-
-def _get_model():
+async def transcribe_audio(file_path: str) -> str:
+    if not WHISPER_AVAILABLE:
+        return "Audio transcription is not available in this deployment."
     global _model
     if _model is None:
         _model = whisper.load_model("base")
-    return _model
-
-def transcribe_audio_sync(file_path: str) -> Dict:
-    model  = _get_model()
-    result = model.transcribe(file_path, word_timestamps=False)
-    return {
-        "text": result.get("text", ""),
-        "segments": [
-            {"start": s["start"], "end": s["end"], "text": s["text"].strip()}
-            for s in result.get("segments", [])
-        ],
-    }
-
-async def transcribe_audio(file_path: str) -> Dict:
-    return await asyncio.to_thread(transcribe_audio_sync, file_path)
+    result = _model.transcribe(file_path)
+    return result["text"]
